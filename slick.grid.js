@@ -1383,7 +1383,7 @@ if (typeof Slick === "undefined") {
           (row === activeRow ? " active" : "") +
           (row % 2 == 1 ? " odd" : " even");
 
-      var metadata = data.getItemMetadata && data.getItemMetadata(row);
+      var metadata = data.getItemMetadata && data.getItemMetadata(row, d);
 
       if (metadata && metadata.cssClasses) {
         rowCss += " " + metadata.cssClasses;
