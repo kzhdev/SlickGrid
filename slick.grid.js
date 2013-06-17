@@ -133,7 +133,7 @@ if (typeof Slick === "undefined") {
     var headerColumnWidthDiff = 0, headerColumnHeightDiff = 0, // border+padding
         cellWidthDiff = 0, cellHeightDiff = 0;
     var absoluteColumnMinWidth;
-    var numberOfRows = 0;
+    var dataLength = 0;
 
     var tabbingDirection = 1;
     var activePosX;
@@ -1252,10 +1252,11 @@ if (typeof Slick === "undefined") {
 
     function getDataLength() {
       if (data.getLength) {
-        return data.getLength();
+        dataLength = data.getLength();
       } else {
-        return data.length;
+        dataLegnth = data.length;
       }
+      return dataLength;
     }
 
     function getDataItem(i) {
@@ -1564,8 +1565,12 @@ if (typeof Slick === "undefined") {
 
     function resizeCanvas() {
       if (!initialized) { return; }
+
+      var dataLen;
+
       if (options.autoHeight) {
-        viewportH = options.rowHeight * (getDataLength() + (options.enableAddRow ? 1 : 0));
+          dataLen = getDataLength();
+          viewportH = options.rowHeight * (dataLen + (options.enableAddRow ? 1 : 0));
       } else {
         viewportH = getViewportHeight();
       }
@@ -1580,15 +1585,17 @@ if (typeof Slick === "undefined") {
         autosizeColumns();
       }
 
-      updateRowCount();
+      updateRowCount(dataLen);
       handleScroll();
       render();
     }
 
-    function updateRowCount() {
-      var dataLength = getDataLength();
+    function updateRowCount(dataLen) {
       if (!initialized) { return; }
-      numberOfRows = dataLength +
+
+      dataLen = (dataLen === undefined ? getDataLength() : dataLen);
+
+      var numberOfRows = dataLen +
           (options.enableAddRow ? 1 : 0) +
           (options.leaveSpaceForNewRows ? numVisibleRows - 1 : 0);
 
@@ -1598,7 +1605,7 @@ if (typeof Slick === "undefined") {
 
       // remove the rows that are now outside of the data range
       // this helps avoid redundant calls to .removeRow() when the size of the data decreased by thousands of rows
-      var l = options.enableAddRow ? dataLength : dataLength - 1;
+      var l = options.enableAddRow ? dataLen : dataLen - 1;
       for (var i in rowsCache) {
         if (i >= l) {
           removeRowFromCache(i);
@@ -1684,7 +1691,7 @@ if (typeof Slick === "undefined") {
       }
 
       range.top = Math.max(0, range.top);
-      range.bottom = Math.min(options.enableAddRow ? getDataLength() : getDataLength() - 1, range.bottom);
+      range.bottom = Math.min(options.enableAddRow ? dataLength : dataLength - 1, range.bottom);
 
       range.leftPx -= viewportW;
       range.rightPx += viewportW;
@@ -1828,12 +1835,11 @@ if (typeof Slick === "undefined") {
       }
     }
 
-    function renderRows(range) {
+    function renderRows(range, dataLength) {
       var parentNode = $canvas[0],
           stringArray = [],
           rows = [],
-          needToReselectCell = false,
-          dataLength = getDataLength();
+          needToReselectCell = false;
 
       for (var i = range.top, ii = range.bottom; i <= ii; i++) {
         if (rowsCache[i]) {
@@ -1916,10 +1922,10 @@ if (typeof Slick === "undefined") {
       }
 
       // render missing rows
-      renderRows(rendered);
+      renderRows(rendered, dataLength);
 
       postProcessFromRow = visible.top;
-      postProcessToRow = Math.min(options.enableAddRow ? getDataLength() : getDataLength() - 1, visible.bottom);
+      postProcessToRow = Math.min(options.enableAddRow ? dataLength : dataLength - 1, visible.bottom);
       startPostProcessing();
 
       lastRenderedScrollTop = scrollTop;
@@ -1994,7 +2000,7 @@ if (typeof Slick === "undefined") {
       while (postProcessFromRow <= postProcessToRow) {
         var row = (vScrollDir >= 0) ? postProcessFromRow++ : postProcessToRow--;
         var cacheEntry = rowsCache[row];
-        if (!cacheEntry || row >= getDataLength()) {
+        if (!cacheEntry || row >= dataLength) {
           continue;
         }
 
@@ -2178,7 +2184,7 @@ if (typeof Slick === "undefined") {
             if (options.editable) {
               if (currentEditor) {
                 // adding new row
-                if (activeRow === getDataLength()) {
+                if (activeRow === dataLength) {
                   navigateDown();
                 } else {
                   commitEditAndSetFocus();
@@ -2232,7 +2238,7 @@ if (typeof Slick === "undefined") {
       if ((activeCell != cell.cell || activeRow != cell.row) && canCellBeActive(cell.row, cell.cell)) {
         if (!getEditorLock().isActive() || getEditorLock().commitCurrentEdit()) {
           scrollRowIntoView(cell.row, false);
-          setActiveCellInternal(getCellNode(cell.row, cell.cell), (cell.row === getDataLength()) || options.autoEdit);
+          setActiveCellInternal(getCellNode(cell.row, cell.cell), (cell.row === dataLength) || options.autoEdit);
         }
       }
     }
@@ -2302,7 +2308,7 @@ if (typeof Slick === "undefined") {
     }
 
     function cellExists(row, cell) {
-      return !(row < 0 || row >= getDataLength() || cell < 0 || cell >= columns.length);
+      return !(row < 0 || row >= dataLength || cell < 0 || cell >= columns.length);
     }
 
     function getCellFromPoint(x, y) {
@@ -2467,12 +2473,12 @@ if (typeof Slick === "undefined") {
 
     function isCellPotentiallyEditable(row, cell) {
       // is the data for this row loaded?
-      if (row < getDataLength() && !getDataItem(row)) {
+      if (row < dataLength && !getDataItem(row)) {
         return false;
       }
 
       // are we in the Add New row?  can we create new from this cell?
-      if (columns[cell].cannotTriggerInsert && row >= getDataLength()) {
+      if (columns[cell].cannotTriggerInsert && row >= dataLength) {
         return false;
       }
 
@@ -2780,7 +2786,7 @@ if (typeof Slick === "undefined") {
     function gotoDown(row, cell, posX) {
       var prevCell;
       while (true) {
-        if (++row >= getDataLength() + (options.enableAddRow ? 1 : 0)) {
+        if (++row >= dataLength + (options.enableAddRow ? 1 : 0)) {
           return null;
         }
 
@@ -2841,7 +2847,7 @@ if (typeof Slick === "undefined") {
       }
 
       var firstFocusableCell = null;
-      while (++row < getDataLength() + (options.enableAddRow ? 1 : 0)) {
+      while (++row < dataLength + (options.enableAddRow ? 1 : 0)) {
         firstFocusableCell = findFirstFocusableCell(row);
         if (firstFocusableCell !== null) {
           return {
@@ -2856,7 +2862,7 @@ if (typeof Slick === "undefined") {
 
     function gotoPrev(row, cell, posX) {
       if (row == null && cell == null) {
-        row = getDataLength() + (options.enableAddRow ? 1 : 0) - 1;
+        row = dataLength + (options.enableAddRow ? 1 : 0) - 1;
         cell = posX = columns.length - 1;
         if (canCellBeActive(row, cell)) {
           return {
@@ -2954,13 +2960,13 @@ if (typeof Slick === "undefined") {
       var stepFn = stepFunctions[dir];
       var pos = stepFn(activeRow, activeCell, activePosX);
       if (pos) {
-        var isAddNewRow = (pos.row == getDataLength());
+        var isAddNewRow = (pos.row == dataLength);
         scrollCellIntoView(pos.row, pos.cell, !isAddNewRow);
         setActiveCellInternal(getCellNode(pos.row, pos.cell), isAddNewRow || options.autoEdit);
         activePosX = pos.posX;
         return true;
       } else {
-        setActiveCellInternal(getCellNode(activeRow, activeCell), (activeRow == getDataLength()) || options.autoEdit);
+        setActiveCellInternal(getCellNode(activeRow, activeCell), (activeRow == dataLength) || options.autoEdit);
         return false;
       }
     }
@@ -2975,7 +2981,7 @@ if (typeof Slick === "undefined") {
 
     function setActiveCell(row, cell) {
       if (!initialized) { return; }
-      if (row > getDataLength() || row < 0 || cell >= columns.length || cell < 0) {
+      if (row > dataLength || row < 0 || cell >= columns.length || cell < 0) {
         return;
       }
 
@@ -2988,7 +2994,7 @@ if (typeof Slick === "undefined") {
     }
 
     function canCellBeActive(row, cell) {
-      if (!options.enableCellNavigation || row >= getDataLength() + (options.enableAddRow ? 1 : 0) ||
+      if (!options.enableCellNavigation || row >= dataLength + (options.enableAddRow ? 1 : 0) ||
           row < 0 || cell >= columns.length || cell < 0) {
         return false;
       }
@@ -3010,7 +3016,7 @@ if (typeof Slick === "undefined") {
     }
 
     function canCellBeSelected(row, cell) {
-      if (row >= getDataLength() || row < 0 || cell >= columns.length || cell < 0) {
+      if (row >= dataLength || row < 0 || cell >= columns.length || cell < 0) {
         return false;
       }
 
@@ -3042,7 +3048,7 @@ if (typeof Slick === "undefined") {
       var newCell = getCellNode(row, cell);
 
       // if selecting the 'add new' row, start editing right away
-      setActiveCellInternal(newCell, forceEdit || (row === getDataLength()) || options.autoEdit);
+      setActiveCellInternal(newCell, forceEdit || (row === dataLength) || options.autoEdit);
 
       // if no editor was created, set the focus back on the grid
       if (!currentEditor) {
@@ -3063,7 +3069,7 @@ if (typeof Slick === "undefined") {
           var validationResults = currentEditor.validate();
 
           if (validationResults.valid) {
-            if (activeRow < getDataLength()) {
+            if (activeRow < dataLength) {
               var editCommand = {
                 row: activeRow,
                 cell: activeCell,
