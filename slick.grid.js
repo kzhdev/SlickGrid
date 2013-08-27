@@ -1777,10 +1777,10 @@ if (typeof Slick === "undefined") {
         // Render missing cells.
         cellsAdded = 0;
 
-        var metadata = data.getItemMetadata && data.getItemMetadata(row);
-        metadata = metadata && metadata.columns;
-
         var d = getDataItem(row);
+        
+        var metadata = data.getItemMetadata && data.getItemMetadata(row, d);
+        metadata = metadata && metadata.columns;
 
         // TODO:  shorten this loop (index? heuristics? binary search?)
         for (var i = 0, ii = columns.length; i < ii; i++) {
